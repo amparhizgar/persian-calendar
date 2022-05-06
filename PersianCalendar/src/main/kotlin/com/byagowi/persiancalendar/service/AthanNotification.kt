@@ -14,6 +14,7 @@ import android.os.Looper
 import android.view.View
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.getSystemService
 import com.byagowi.persiancalendar.ASR_KEY
 import com.byagowi.persiancalendar.BuildConfig
@@ -112,6 +113,7 @@ class AthanNotification : Service() {
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setTimeoutAfter(SIX_MINUTES_IN_MILLIS) // No-op on versions prior to O (26)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             val cv = RemoteViews(applicationContext?.packageName, R.layout.custom_notification)
@@ -130,10 +132,16 @@ class AthanNotification : Service() {
 
         startForeground(notificationId, notificationBuilder.build())
 
-        Handler(Looper.getMainLooper()).postDelayed({
-            notificationManager?.cancel(notificationId)
-            stopSelf()
-        }, SIX_MINUTES_IN_MILLIS)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // no need to keep the service alive in api >= O.
+            // notification will timeout automatically
+            stopForeground(false)
+        } else {
+            Handler(Looper.getMainLooper()).postDelayed({
+                notificationManager?.cancel(notificationId)
+                stopSelf()
+            }, SIX_MINUTES_IN_MILLIS)
+        }
 
         return super.onStartCommand(intent, flags, startId)
     }
