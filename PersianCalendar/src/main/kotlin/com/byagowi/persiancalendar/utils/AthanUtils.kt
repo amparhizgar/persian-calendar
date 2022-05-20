@@ -138,18 +138,7 @@ private fun scheduleAlarm(context: Context, alarmTimeName: String, timeInMillis:
     val remainedMillis = timeInMillis - System.currentTimeMillis()
     debugLog("Alarms: $alarmTimeName in ${remainedMillis / 60000} minutes")
     if (remainedMillis < 0) return // Don't set alarm in past
-
-    if (enableWorkManager) { // Schedule in both, startAthan has the logic to skip duplicated calls
-        val workerInputData = Data.Builder().putLong(KEY_EXTRA_PRAYER_TIME, timeInMillis)
-            .putString(KEY_EXTRA_PRAYER, alarmTimeName).build()
-        val alarmWorker = OneTimeWorkRequest.Builder(AlarmWorker::class.java)
-            .setInitialDelay(remainedMillis, TimeUnit.MILLISECONDS)
-            .setInputData(workerInputData)
-            .build()
-        WorkManager.getInstance(context)
-            .beginUniqueWork(ALARM_TAG + i, ExistingWorkPolicy.REPLACE, alarmWorker)
-            .enqueue()
-    }
+    
 
     val am = context.getSystemService<AlarmManager>() ?: return
     val pendingIntent = PendingIntent.getBroadcast(
